@@ -10,11 +10,12 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/go-kit/kit/log"
+	"context"
+
+	"github.com/go-kit/log"
 	payment "github.com/mikesay/payment/service"
 	stdopentracing "github.com/opentracing/opentracing-go"
 	zipkin "github.com/openzipkin-contrib/zipkin-go-opentracing"
-	"golang.org/x/net/context"
 )
 
 const (

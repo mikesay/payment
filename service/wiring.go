@@ -1,11 +1,12 @@
-package payment
+package service
 
 import (
 	"net/http"
 	"os"
 
-	"github.com/go-kit/kit/log"
-	"golang.org/x/net/context"
+	"context"
+
+	"github.com/go-kit/log"
 
 	stdopentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
