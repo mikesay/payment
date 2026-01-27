@@ -1,13 +1,10 @@
-FROM golang:1.7
+FROM golang:1.24.12
 
-COPY . /go/src/github.com/microservices-demo/payment/
+COPY . /go/src/github.com/mikesay/payment/
 
-RUN go get -u github.com/FiloSottile/gvt
-RUN cd /go/src/github.com/microservices-demo/payment/ && gvt restore
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app /go/src/github.com/mikesay/payment/
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app github.com/microservices-demo/payment/cmd/paymentsvc
-
-FROM alpine:3.4
+FROM alpine:3.23.2
 
 WORKDIR /
 COPY --from=0 /app /app

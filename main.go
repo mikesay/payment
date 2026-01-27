@@ -24,9 +24,16 @@ const (
 	ServiceName = "payment"
 )
 
+func env(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
+
 func main() {
 	var (
-		port          = flag.String("port", "8889", "Port to bind HTTP listener")
+		port          = flag.String("port", env("PORT", "8080"), "Port to bind HTTP listener")
 		zip           = flag.String("zipkin", os.Getenv("ZIPKIN"), "Zipkin address")
 		declineAmount = flag.Float64("decline", 105, "Decline payments over certain amount")
 	)
