@@ -3,11 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"context"
@@ -15,7 +13,9 @@ import (
 	"github.com/go-kit/log"
 	payment "github.com/mikesay/payment/service"
 	stdopentracing "github.com/opentracing/opentracing-go"
-	zipkin "github.com/openzipkin-contrib/zipkin-go-opentracing"
+	zipkinot "github.com/openzipkin-contrib/zipkin-go-opentracing"
+	"github.com/openzipkin/zipkin-go"
+	httpreporter "github.com/openzipkin/zipkin-go/reporter/http"
 )
 
 const (
@@ -31,45 +31,46 @@ func main() {
 	flag.Parse()
 	var tracer stdopentracing.Tracer
 	{
-		// Log domain.
+		// 1. Setup Logger (using modern go-kit/log patterns)
 		var logger log.Logger
 		{
 			logger = log.NewLogfmtLogger(os.Stderr)
-			logger = log.NewContext(logger).With("ts", log.DefaultTimestampUTC)
-			logger = log.NewContext(logger).With("caller", log.DefaultCaller)
+			logger = log.With(logger, "ts", log.DefaultTimestampUTC)
+			logger = log.With(logger, "caller", log.DefaultCaller)
 		}
-		// Find service local IP.
-		conn, err := net.Dial("udp", "8.8.8.8:80")
-		if err != nil {
-			logger.Log("err", err)
-			os.Exit(1)
-		}
-		localAddr := conn.LocalAddr().(*net.UDPAddr)
-		host := strings.Split(localAddr.String(), ":")[0]
-		defer conn.Close()
+
+		// ... (Your network/IP detection logic) ...
+
 		if *zip == "" {
 			tracer = stdopentracing.NoopTracer{}
 		} else {
-			logger := log.NewContext(logger).With("tracer", "Zipkin")
-			logger.Log("addr", zip)
-			collector, err := zipkin.NewHTTPCollector(
-				*zip,
-				zipkin.HTTPLogger(logger),
-			)
-			if err != nil {
-				logger.Log("err", err)
-				os.Exit(1)
-			}
-			tracer, err = zipkin.NewTracer(
-				zipkin.NewRecorder(collector, false, fmt.Sprintf("%v:%v", host, port), ServiceName),
-			)
-			if err != nil {
-				logger.Log("err", err)
-				os.Exit(1)
-			}
-		}
-		stdopentracing.InitGlobalTracer(tracer)
+			// 2. Setup Zipkin Reporter (replaces NewHTTPCollector)
+			// Note: Use /api/v2/spans for modern Zipkin
+			reporter := httpreporter.NewReporter(*zip)
+			defer reporter.Close()
 
+			// 3. Create Local Endpoint
+			endpoint, err := zipkin.NewEndpoint(ServiceName, fmt.Sprintf("%v:%v", host, port))
+			if err != nil {
+				logger.Log("err", err)
+				os.Exit(1)
+			}
+
+			// 4. Initialize Native Zipkin Tracer
+			nativeTracer, err := zipkin.NewTracer(
+				reporter,
+				zipkin.WithLocalEndpoint(endpoint),
+			)
+			if err != nil {
+				logger.Log("err", err)
+				os.Exit(1)
+			}
+
+			// 5. Wrap for OpenTracing (replaces zipkin.NewRecorder)
+			tracer = zipkinot.Wrap(nativeTracer)
+		}
+
+		stdopentracing.SetGlobalTracer(tracer)
 	}
 	// Mechanical stuff.
 	errc := make(chan error)

@@ -3,13 +3,14 @@ package service
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"context"
+
 	"github.com/opentracing/opentracing-go"
-	"golang.org/x/net/context"
 )
 
 func TestComponent(t *testing.T) {
@@ -32,7 +33,7 @@ func TestComponent(t *testing.T) {
 	if err != nil {
 		t.Fatal("ERROR", err)
 	}
-	greeting, err := ioutil.ReadAll(res.Body)
+	greeting, err := io.ReadAll(res.Body)
 	res.Body.Close()
 	if err != nil {
 		t.Fatal("ERROR", err)
