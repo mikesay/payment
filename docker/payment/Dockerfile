@@ -1,8 +1,10 @@
 FROM golang:1.24.12
 
-COPY . /go/src/github.com/mikesay/payment/
+WORKDIR /src
 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app /go/src/github.com/mikesay/payment/
+COPY . /src/
+
+RUN CGO_ENABLED=0 GOOS=linux go build -a -o /app .
 
 FROM alpine:3.23.2
 

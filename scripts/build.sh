@@ -22,9 +22,9 @@ fi
 CODE_DIR=$(cd $SCRIPT_DIR/..; pwd)
 echo $CODE_DIR
 
-cp -r $CODE_DIR/cmd/ $CODE_DIR/docker/payment/cmd/
+cp -r $CODE_DIR/service/ $CODE_DIR/docker/payment/service/
 cp $CODE_DIR/*.go $CODE_DIR/docker/payment/
-mkdir $CODE_DIR/docker/payment/vendor && cp $CODE_DIR/vendor/manifest $CODE_DIR/docker/payment/vendor/
+cp $CODE_DIR/go.* $CODE_DIR/docker/payment/
 
 REPO=${GROUP}/$(basename payment);
 
